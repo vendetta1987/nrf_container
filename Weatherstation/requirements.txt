@@ -1,0 +1,3 @@
+nrf24==2.0.0
+paho-mqtt==1.6.1
+pigpio==1.78
