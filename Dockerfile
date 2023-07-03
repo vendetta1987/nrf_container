@@ -1,17 +1,17 @@
-#FROM python:3-slim-bullseye AS base
-#RUN apt update
-#RUN apt install -y build-essential cmake
-#
-#FROM base
+FROM python:3-slim-bullseye AS python3_buildessential
+RUN apt update
+RUN apt install -y build-essential cmake
+
 FROM python3_buildessential
 
-COPY requirements.txt .
+COPY Ahoy/requirements.txt .
 RUN pip install -r requirements.txt
 
 RUN apt remove -y build-essential cmake
 RUN apt autoremove -y
+RUN apt autoclean -y
 
-COPY ahoy_rpi /ahoy
+COPY Ahoy/ahoy_rpi /ahoy
 
 VOLUME /ahoy_work
 
