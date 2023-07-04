@@ -1,11 +1,15 @@
+import os
 import subprocess
-import time
 
 
-def RunAsProcess(args: list[str], cwd:str=".", timeout: int = 5) -> bool:
-    print("running: "+" ".join(args))
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, cwd=cwd, text=True)
+def CreateProcess(args: list[str], cwd: str = ".") -> subprocess.Popen:
+    os.chdir(cwd)
+    print("running: "+" ".join(args)+" inside "+os.getcwd())
+    return subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, text=True)
+
+
+def RunAsProcess(args: list[str], cwd: str = ".", timeout: int = 5) -> bool:
+    CreateProcess(args, cwd)
 
     res = True
     stdout = None
@@ -13,14 +17,15 @@ def RunAsProcess(args: list[str], cwd:str=".", timeout: int = 5) -> bool:
 
     try:
         stdout, stderr = proc.communicate(None, timeout)
-        res &= len(str(stderr)) <= 0
     except subprocess.TimeoutExpired:
         print("timeout")
         proc.kill()
         stdout, stderr = proc.communicate()
-        res &= len(str(stderr)) <= 0
     except:
         res = False
+
+    if stderr is not None:
+        res &= len(str(stderr)) <= 0
 
     if not res and str(stderr):
         print(f"stderr = {stderr}")
@@ -31,10 +36,12 @@ def RunAsProcess(args: list[str], cwd:str=".", timeout: int = 5) -> bool:
 
 
 if __name__ == "__main__":
-    RunAsProcess(["pygpiod", "-g"])
-    
     while True:
-        RunAsProcess(["python", "-m", "hoymiles", "-c", "/ahoy_work/ahoy.yml" ],"ahoy",10*60)
+        RunAsProcess(["python", "-m", "hoymiles", "-c",
+                     "/ahoy_work/ahoy.yml"], "/ahoy", 10*60)
 
-        RunAsProcess(["python", "Hub.py"],"weatherstation")
-        RunAsProcess(["bash", "./spi_reset.sh"],"weatherstation")
+        pigpiod_process = CreateProcess(["pigpiod"])
+        RunAsProcess(["python", "Hub.py"], "/weatherstation", 60)
+        pigpiod_process.kill()
+
+        RunAsProcess(["bash", "spi_reset.sh"], "/weatherstation")
