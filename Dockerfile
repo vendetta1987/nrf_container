@@ -36,6 +36,7 @@ RUN pip install -r requirements.txt
 RUN rm requirements.txt
 
 COPY Weatherstation /weatherstation
+RUN apt install -y kmod
 
 ###
 WORKDIR /
