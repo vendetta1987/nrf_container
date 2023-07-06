@@ -57,12 +57,18 @@ if __name__ == "__main__":
         RunAsProcess(["bash", "spi_reset.sh"], "/weatherstation")
 
         RunAsProcess(["python", "-m", "hoymiles", "-c",
-                      "/ahoy_work/ahoy.yml"], "/ahoy", 10)  # *60)
+                     "/ahoy_work/ahoy.yml"], "/ahoy", 10)  # *60)
 
         RunAsProcess(["bash", "spi_reset.sh"], "/weatherstation")
 
         pigpiod_process = CreateProcess(["pigpiod"])
         RunAsProcess(["python", "Hub.py"], "/weatherstation", 10)
-        pigpiod_process.kill()
+
+        try:
+            pigpiod_process.terminate()
+            print("waiting for pigpiod to end")
+            pigpiod_process.wait(10)
+        except subprocess.TimeoutExpired:
+            pigpiod_process.kill()
 
         break
