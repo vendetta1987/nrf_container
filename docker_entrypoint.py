@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
         RunAsProcess(["bash", "spi_reset.sh"], "/weatherstation")
 
-        pigpiod_process = CreateProcess(["pigpiod"])
+        pigpiod_process = CreateProcess(["pigpiod", "-g"])
         RunAsProcess(["python", "Hub.py"], "/weatherstation", 10)
 
         try:
