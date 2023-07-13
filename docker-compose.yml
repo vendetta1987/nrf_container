@@ -1,0 +1,30 @@
+version: "3.7"
+
+services:
+  ahoy_dtu:
+    image: ahoy_weather:0.6.2
+    container_name: ahoy_weather
+    working_dir: "/"
+    volumes:
+      - type: bind
+        source: /mnt/usb_hdd/python_playground/NRF_container/Ahoy
+        target: /ahoy_work
+      - type: bind
+        source: /lib/modules/
+        target: /lib/modules/
+        read_only: true
+    privileged: true
+    restart: always
+    #restart: no
+    cap_add:
+      - SYS_RAWIO
+    devices:
+      - "/dev/mem:/dev/mem"
+      - "/dev/vcio:/dev/vcio"
+    environment:
+      TZ: Europe/Berlin
+    deploy:
+      resources:
+          limits:
+            cpus: "1.0"
+            memory: 512M
