@@ -297,8 +297,8 @@ class InverterPacketFragment:
 
 class HoymilesNRF:
     """Hoymiles NRF24 Interface"""
-    tx_channel_id = 0
-    tx_channel_list = [40]
+    tx_channel_id = 2
+    tx_channel_list = [3,23,40,61,75]
     rx_channel_id = 0
     rx_channel_list = [3,23,40,61,75]
     rx_channel_ack = False
@@ -326,20 +326,6 @@ class HoymilesNRF:
 
         self.radio = radio
 
-        #import RPi.GPIO as GPIO
-        #IRQ_PIN=24
-        #GPIO.setmode(GPIO.BCM)
-        #GPIO.setup(IRQ_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-        #GPIO.add_event_detect(IRQ_PIN, GPIO.FALLING, callback=self.interrupt_handler)
-
-    #def interrupt_handler(self, pin_nr):
-    #    """This function is called when IRQ pin is detected active LOW"""
-    #    print("IRQ pin", pin_nr, "went active LOW.")
-    #    tx_ds, tx_df, rx_dr = self.radio.whatHappened()  # get IRQ status flags
-    #    if tx_df:
-    #        self.radio.flush_tx()
-    #    print(f"\ttx_OK: {tx_ds}, tx_FAIL: {tx_df}, rx_HAS_DATA: {rx_dr}")
-
     def transmit(self, packet, txpower=None):
         """
         Transmit Packet
@@ -348,6 +334,12 @@ class HoymilesNRF:
         :return: if ACK received of ACK disabled
         :rtype: bool
         """
+
+        self.next_tx_channel()
+
+        if HOYMILES_TRANSACTION_LOGGING:
+            c_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+            logging.debug(f'{c_datetime} Transmit {len(packet)} bytes channel {self.tx_channel}: {hexify_payload(packet)}')
 
         if not txpower:
             txpower = self.txpower
@@ -380,13 +372,13 @@ class HoymilesNRF:
         """
         Receive Packets
 
-        :param timeout: receive timeout in nanoseconds (default: 12e8)
+        :param timeout: receive timeout in nanoseconds (default: 5e8)
         :type timeout: int
         :yields: fragment
         """
 
         if not timeout:
-            timeout=12e8
+            timeout=5e8
 
         self.radio.setChannel(self.rx_channel)
         self.radio.setAutoAck(False)
@@ -453,6 +445,15 @@ class HoymilesNRF:
                 self.rx_channel_id = 0
             return True
         return False
+
+    def next_tx_channel(self):
+        """
+        Select next channel from hop list
+
+        """
+        self.tx_channel_id = self.tx_channel_id + 1
+        if self.tx_channel_id >= len(self.tx_channel_list):
+            self.tx_channel_id = 0
 
     @property
     def tx_channel(self):
@@ -633,10 +634,6 @@ class InverterTransaction:
 
         packet = self.tx_queue.pop(0)
 
-        if HOYMILES_TRANSACTION_LOGGING:
-            c_datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-            logging.debug(f'{c_datetime} Transmit {len(packet)} | {hexify_payload(packet)}')
-
         self.radio.transmit(packet, txpower=self.txpower)
 
         wait = False
@@ -648,7 +645,6 @@ class InverterTransaction:
                 self.frame_append(response)
                 wait = True
         except TimeoutError:
-            #logging.warning("TimeoutError receiving")
             pass
         except BufferError as e:
             logging.warning(f'Buffer error {e}')
