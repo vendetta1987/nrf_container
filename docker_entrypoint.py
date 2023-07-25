@@ -22,10 +22,16 @@ def RunAsProcess(args: list[str], cwd: str = ".", timeout: int = 5) -> bool:
     try:
         stdout, stderr = proc.communicate(None, timeout)
     except subprocess.TimeoutExpired:
-        print("timeout")
+        print("process timed out, sending SIGTERM")
 
-        proc.kill()
-        _stdout, _stderr = proc.communicate()
+        proc.terminate()
+
+        try:
+            _stdout, _stderr = proc.communicate(None, 3)
+        except subprocess.TimeoutExpired:
+            print("terminate timed out, sending SIGKILL")
+            proc.kill()
+            _stdout, _stderr = proc.communicate()
 
         if stdout is None:
             stdout = _stdout
@@ -54,21 +60,6 @@ def RunAsProcess(args: list[str], cwd: str = ".", timeout: int = 5) -> bool:
 
 if __name__ == "__main__":
     while True:
-        RunAsProcess(["bash", "spi_reset.sh"], "/weatherstation")
-
-        RunAsProcess(["python", "-m", "hoymiles", "-c",
-                     "/ahoy_work/ahoy.yml"], "/ahoy", 10)  # *60)
-
-        RunAsProcess(["bash", "spi_reset.sh"], "/weatherstation")
-
-        pigpiod_process = CreateProcess(["pigpiod", "-g"])
-        RunAsProcess(["python", "Hub.py"], "/weatherstation", 10)
-
-        try:
-            pigpiod_process.terminate()
-            print("waiting for pigpiod to end")
-            pigpiod_process.wait(10)
-        except subprocess.TimeoutExpired:
-            pigpiod_process.kill()
-
-        break
+        RunAsProcess(["python", "-u", "-m", "hoymiles", "-c",
+                     "/ahoy_work/ahoy.yml"], "/ahoy", 10 * 60)
+        RunAsProcess(["python", "-u", "Hub.py"], "/weatherstation", 10)
