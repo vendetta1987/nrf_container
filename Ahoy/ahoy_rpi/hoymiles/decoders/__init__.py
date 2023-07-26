@@ -74,10 +74,10 @@ class Response:
         self.inverter_ser = params.get('inverter_ser', None)
         self.inverter_name = params.get('inverter_name', None)
         self.dtu_ser = params.get('dtu_ser', None)
-        self.inv_strings = params.get('strings', None)
-        logging.debug(f"response from {self.inverter_ser}: {self.inv_strings}")
-
         self.response = args[0]
+
+        strings = params.get('strings', None)
+        self.inv_strings = strings
 
         if isinstance(params.get('time_rx', None), datetime):
             self.time_rx = params['time_rx']
@@ -151,21 +151,19 @@ class StatusResponse(Response):
         """
         strings = []
         s_exists = True
-        while s_exists:
+        while s_exists and len(strings) < len(self.inv_strings):
             s_exists = False
             string_id = len(strings)
-            string = {}
-
-            if self.inv_strings is not None and len(self.inv_strings) > string_id and 's_name' in self.inv_strings:
-                string['name'] = self.inv_strings[string_id]['s_name']
-
-            for key in self.string_keys:
-                prop = f'dc_{key}_{string_id}'
-                if hasattr(self, prop):
-                    s_exists = True
-                    string[key] = getattr(self, prop)
-            if s_exists:
-                strings.append(string)
+            if string_id < len(self.inv_strings):
+              string = {}
+              string['name'] = self.inv_strings[string_id]['s_name']
+              for key in self.string_keys:
+                  prop = f'dc_{key}_{string_id}'
+                  if hasattr(self, prop):
+                      s_exists = True
+                      string[key] = getattr(self, prop)
+              if s_exists:
+                  strings.append(string)
 
         return strings
 
@@ -433,15 +431,15 @@ class DebugDecodeAny(UnknownResponse):
         l_payload = len(self.response)
         logging.debug(f' payload has {l_payload} bytes')
 
-        logging.debug()
+        logging.debug('')
         logging.debug('Field view: int')
         print_table_unpack('>B', self.response)
 
-        logging.debug()
+        logging.debug('')
         logging.debug('Field view: shorts')
         print_table_unpack('>H', self.response)
 
-        logging.debug()
+        logging.debug('')
         logging.debug('Field view: longs')
         print_table_unpack('>L', self.response)
 
