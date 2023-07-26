@@ -62,4 +62,4 @@ if __name__ == "__main__":
     while True:
         RunAsProcess(["python", "-u", "-m", "hoymiles", "-c",
                      "/ahoy_work/ahoy.yml"], "/ahoy", 10 * 60)
-        RunAsProcess(["python", "-u", "Hub.py"], "/weatherstation", 10)
+        RunAsProcess(["python", "-u", "Hub.py"], "/weatherstation", 30)
