@@ -101,7 +101,7 @@ class SunsetHandler:
                 logging.info (f'Woke up...')
 
     def sun_status2mqtt(self, dtu_ser, dtu_name):
-        if not mqtt_client:
+        if not mqtt_client or not self.suntimes:
             return
 
         if self.suntimes:
