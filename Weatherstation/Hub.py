@@ -155,7 +155,6 @@ if __name__ == "__main__":
     mqtt_client = MQTTCLient(mqtt_hostname)
     mqtt_client.Connect()
 
-    do_run = True
     retry_limit = 100
 
     try:
